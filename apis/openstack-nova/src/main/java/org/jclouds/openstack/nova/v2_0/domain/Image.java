@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.beans.ConstructorProperties;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Named;
@@ -85,6 +86,7 @@ public class Image extends Resource {
       protected int minDisk;
       protected int minRam;
       protected Resource server;
+      protected List<BlockDeviceMapping> blockDeviceMapping;
       protected Map<String, String> metadata = ImmutableMap.of();
    
       /** 
@@ -159,6 +161,11 @@ public class Image extends Resource {
          return self();
       }
 
+      public T blockDeviceMapping(List<BlockDeviceMapping> blockDeviceMapping){
+         this.blockDeviceMapping = blockDeviceMapping;
+         return self();
+      }
+
       /** 
        * @see Image#getMetadata()
        */
@@ -168,7 +175,7 @@ public class Image extends Resource {
       }
 
       public Image build() {
-         return new Image(id, name, links, updated, created, tenantId, userId, status, progress, minDisk, minRam, server, metadata);
+         return new Image(id, name, links, updated, created, tenantId, userId, status, progress, minDisk, minRam, blockDeviceMapping, server, metadata);
       }
       
       public T fromImage(Image in) {
@@ -203,15 +210,16 @@ public class Image extends Resource {
    private final int progress;
    private final int minDisk;
    private final int minRam;
+   private final List<BlockDeviceMapping> blockDeviceMapping;
    private final Resource server;
    private final Map<String, String> metadata;
 
    @ConstructorProperties({
-      "id", "name", "links", "updated", "created", "tenant_id", "user_id", "status", "progress", "minDisk", "minRam", "server", "metadata"
+      "id", "name", "links", "updated", "created", "tenant_id", "user_id", "status", "progress", "minDisk", "minRam", "server", "blockDeviceMapping", "metadata"
    })
    protected Image(String id, @Nullable String name, java.util.Set<Link> links, @Nullable Date updated, @Nullable Date created,
                    String tenantId, @Nullable String userId, @Nullable Status status, int progress, int minDisk, int minRam,
-                   @Nullable Resource server, @Nullable Map<String, String> metadata) {
+                   @Nullable List<BlockDeviceMapping> blockDeviceMapping, @Nullable Resource server, @Nullable Map<String, String> metadata) {
       super(id, name, links);
       this.updated = updated;
       this.created = created;
@@ -221,6 +229,7 @@ public class Image extends Resource {
       this.progress = progress;
       this.minDisk = minDisk;
       this.minRam = minRam;
+      this.blockDeviceMapping = blockDeviceMapping;
       this.server = server;
       this.metadata = metadata == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(metadata);
    }
@@ -260,6 +269,11 @@ public class Image extends Resource {
 
    public int getMinRam() {
       return this.minRam;
+   }
+
+   @Nullable
+   public List<BlockDeviceMapping> getBlockDeviceMapping(){
+      return this.blockDeviceMapping;
    }
 
    @Nullable
