@@ -16,19 +16,21 @@
  */
 package org.jclouds.openstack.nova.v2_0.config;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
+import java.io.IOException;
+
+import org.jclouds.json.config.GsonModule;
 import org.jclouds.openstack.nova.v2_0.domain.Image;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.util.List;
-
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertEquals;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import com.google.gson.Gson;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 @Test(groups = "unit")
 public class ImageAdapterTest {
@@ -37,37 +39,29 @@ public class ImageAdapterTest {
 
    @BeforeTest
    public void setup(){
-      GsonBuilder gsonBuilder = new GsonBuilder();
-      gsonBuilder.registerTypeAdapter(Image.class, new NovaParserModule.ImageAdapter());
-      gson = gsonBuilder.create();
+      Injector injector = Guice.createInjector(new GsonModule(), new NovaParserModule());
+      gson = injector.getInstance(Gson.class);
    }
 
    public void testDeserializeWithBlockDeviceMappingAndMetadata() throws Exception {
-      Image img = gson.fromJson(stringFromResource("image_list_with_block_device_mapping.json"), Image.class);
-      assertNotNull(img.getMetadata());
-      assertEquals(10, img.getMetadata().size());
-      assertNotNull(img.getBlockDeviceMapping());
-      assertEquals(1, img.getBlockDeviceMapping().size());
-   }
+      ImageContainer container = gson.fromJson(stringFromResource("image_details_with_block_device_mapping.json"), ImageContainer.class);
 
-   public void testDeserializeWithoutBlockDeviceMappingOrMetadata(){
-      //TODO
-   }
+      // Note that the block device mapping keys are removed from the metadata by the adapter.
+      assertNotNull(container.image.getMetadata());
+      assertEquals(container.image.getMetadata().size(), 2);
 
-   public void testDeserializeWithoutBlockDeviceMapping(){
-      //TODO
-   }
-
-   public void testDeserializeWithoutMetadata(){
-      //TODO
+      assertNotNull(container.image.getBlockDeviceMapping());
+      assertEquals(container.image.getBlockDeviceMapping().size(), 1);
    }
 
    private String stringFromResource(String resource) throws IOException {
       return Resources.toString(Resources.getResource(resource), Charsets.UTF_8);
    }
 
-   public static class ImageContainer{
+   // Note that the ImageApi methods use the "@SelectJson" annotation to unwrap the object inside the "image" key
+   // We use this container to deserialize the Image object to simulate that behavior and use a *real* json
+   // in the tests.
+   public static class ImageContainer {
       public Image image;
-      public List<Image> images;
    }
 }
